@@ -1,6 +1,9 @@
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { UsuarioService } from '../../services/usuario.service';
 import { Usuario } from '../../models/usuario.model';
+import { Store } from '@ngrx/store';
+import { AppState } from '../../store/app.reducers';
+import { cargarUsuarios } from '../../store/actions';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-listas',
@@ -9,17 +12,26 @@ import { Usuario } from '../../models/usuario.model';
   styles: ``,
 })
 export class ListasComponent implements OnInit, OnDestroy {
-  usuarios: Usuario[]= [];
+  usersSub!: Subscription;
 
+  usuarios: Usuario[] = [];
+  loading: boolean = false;
+  error: any;
 
-  constructor(public usuarioService: UsuarioService) {}
+  constructor(private store: Store<AppState>) {}
 
   ngOnInit(): void {
-    this.usuarioService.getUsers().subscribe((data) => {
-      console.log(data);
-      this.usuarios= data;
-    });
+    this.usersSub = this.store
+      .select('usuarios')
+      .subscribe(({ users, loading, error }) => {
+        this.usuarios = users;
+        this.loading = loading;
+        this.error = error;
+      });
+    this.store.dispatch(cargarUsuarios());
   }
 
-  ngOnDestroy(): void {}
+  ngOnDestroy(): void {
+    this.usersSub.unsubscribe();
+  }
 }
